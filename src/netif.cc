@@ -47,17 +47,17 @@
 using namespace v8;
 
 NAN_METHOD(GetMacAddress) {
-  NanScope();
-
-  if (args.Length() < 1) {
-    NanThrowTypeError("Wrong number of arguments");
+  if (info.Length() < 1) {
+    Nan::ThrowTypeError("Wrong number of arguments");
+    return info.GetReturnValue().SetUndefined();
   }
 
-  if (!args[0]->IsString()) {
-    NanThrowTypeError("First argument must be a string");
+  if (!info[0]->IsString()) {
+    Nan::ThrowTypeError("First argument must be a string");
+    return info.GetReturnValue().SetUndefined();
   }
 
-  NanUtf8String device(args[0]);
+  Nan::Utf8String device(info[0]);
   char formattedMacAddress[mac_addr_len];
   unsigned char macAddress[ether_addr_len];
 
@@ -78,23 +78,23 @@ NAN_METHOD(GetMacAddress) {
   // With all configured interfaces requested, get handle index
   if ((mgmtInfoBase[5] = if_nametoindex((char *) *device)) == 0) {
 
-    NanThrowTypeError("Error opening interface");
-    NanReturnUndefined();
+      Nan::ThrowTypeError("Error opening interface");
+      return info.GetReturnValue().SetUndefined();
 
   } else {
 
     // Get the size of the data available (store in len)
     if (sysctl(mgmtInfoBase, ether_addr_len, NULL, &length, NULL, 0) < 0) {
 
-      NanThrowTypeError("sysctl mgmtInfoBase failure");
-      NanReturnUndefined();
+        Nan::ThrowTypeError("sysctl mgmtInfoBase failure");
+        return info.GetReturnValue().SetUndefined();
     } else {
 
       // Alloc memory based on above call
       if ((messageBuffer= (char *)malloc(length)) == NULL) {
 
-        NanThrowTypeError("message buffer allocation failure");
-        NanReturnUndefined();
+          Nan::ThrowTypeError("message buffer allocation failure");
+          return info.GetReturnValue().SetUndefined();
       } else {
 
         // Get system information, store in buffer
@@ -103,8 +103,8 @@ NAN_METHOD(GetMacAddress) {
           // Release the buffer memory
           free(messageBuffer);
 
-          NanThrowTypeError("sysctl msgBuffer failure");
-          NanReturnUndefined();
+          Nan::ThrowTypeError("sysctl msgBuffer failure");
+          return info.GetReturnValue().SetUndefined();
         }
       }
     }
@@ -149,8 +149,8 @@ NAN_METHOD(GetMacAddress) {
   } else {
 
     // TODO lookup the ERR for this and return it to the user for example -1 EMFILE (Too many open files)
-    NanThrowTypeError("Error opening interface");
-    NanReturnUndefined();
+    Nan::ThrowTypeError("Error opening interface");
+    return info.GetReturnValue().SetUndefined();
   }
 
   // Close the file descriptor
@@ -179,8 +179,8 @@ NAN_METHOD(GetMacAddress) {
   } else {
 
     // TODO lookup the ERR for this and return it to the user for example -1 EMFILE (Too many open files)
-    NanThrowTypeError("error opening interface");
-    NanReturnUndefined();
+    Nan::ThrowTypeError("Error opening interface");
+    return info.GetReturnValue().SetUndefined();
   }
 
   // Close the file descriptor
@@ -205,12 +205,12 @@ NAN_METHOD(GetMacAddress) {
     }
 
     if (NULL == adapterAddress) {
-      NanThrowTypeError("unknown interface");
-      NanReturnUndefined();
+      Nan::ThrowTypeError("Unknown interface");
+      return info.GetReturnValue().SetUndefined();
     }
     if (adapterAddress->PhysicalAddressLength != ether_addr_len) {
-      NanThrowTypeError("address length mismatch");
-      NanReturnUndefined();
+      Nan::ThrowTypeError("Address length mismatch");
+      return info.GetReturnValue().SetUndefined();
     }
 
     // Copy link layer address data in socket structure to an array
@@ -223,19 +223,19 @@ NAN_METHOD(GetMacAddress) {
   } else {
 
     // TODO lookup the ERR for this and return it to the user
-    NanThrowTypeError("error obtaining adapter addresses");
-    NanReturnUndefined();
+    Nan::ThrowTypeError("error obtaining adapter addresses");
+    return info.GetReturnValue().SetUndefined();
   }
 
 #endif
 
   // Copy mac address to a v8 string
-  NanReturnValue(NanNew<String>(formattedMacAddress));
+  info.GetReturnValue().Set(Nan::New<String>(formattedMacAddress).ToLocalChecked());
 }
 
-void Init(Handle<Object> target) {
-  target->Set(NanNew<String>("getMacAddress"),
-      NanNew<FunctionTemplate>(GetMacAddress)->GetFunction());
+NAN_MODULE_INIT(Init) {
+  Nan::Set(target, Nan::New<String>("getMacAddress").ToLocalChecked(),
+    Nan::GetFunction(Nan::New<FunctionTemplate>(GetMacAddress)).ToLocalChecked());
 }
 
 NODE_MODULE(netif, Init)

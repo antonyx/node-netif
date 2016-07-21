@@ -28,7 +28,7 @@
     "test": "nodeunit test"
   },
   "dependencies": {
-    "nan": "~1.8.4"
+    "nan": "2.3.5"
   },
   "devDependencies": {
     "nodeunit": "~0.8.8"
