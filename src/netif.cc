@@ -15,7 +15,6 @@
 #endif
 
 #if defined(linux)
-#include <sys/sysctl.h>
 #include <sys/ioctl.h>
 #include <linux/if.h>
 #include <netdb.h>
